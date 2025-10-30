@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Groceries - Product Listing</title>
+    <!-- Load Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" xintegrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <!-- Load Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Inter', sans-serif;
+        }
+        .product-card {
+            border: 1px solid #dee2e6;
+            border-radius: 12px;
+            padding: 15px;
+            text-align: center;
+            background-color: white;
+            transition: box-shadow 0.3s;
+        }
+        .product-card:hover {
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        .product-img {
+            width: 100%;
+            height: 150px;
+            object-fit: contain;
+            margin-bottom: 10px;
+        }
+        .price-text {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #28a745; /* Green for Groceries */
+        }
+        .add-to-cart-btn, .checkout-btn {
+            width: 100%;
+            margin-top: 10px;
+            font-weight: 600;
+        }
+        .cart-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Top Navigation Bar (Header) -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-success shadow-sm">
+        <div class="container-fluid container-lg">
+            <a class="navbar-brand fw-bold" href="#">
+                <i class="bi bi-basket me-2"></i>Groceries
+            </a>
+            <div class="d-flex">
+                <a href="#" class="btn btn-outline-light me-3" onclick="goBack()">
+                    <i class="bi bi-arrow-left"></i> Back to Dashboard
+                </a>
+                <!-- Main Cart Button -->
+                <button id="cart-btn" class="btn btn-light position-relative" type="button" onclick="viewCart()">
+                    <i class="bi bi-cart-fill"></i> Cart 
+                    <span id="cart-count" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                        0
+                    </span>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content: Product Grid -->
+    <main class="container-lg my-5">
+        <h1 class="mb-5 text-dark display-6 fw-bold text-center">Fresh Produce</h1>
+        
+        <div id="product-list" class="row g-4">
+            <!-- Product Cards will be rendered here -->
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-white text-center py-3 mt-5">
+        <p class="m-0 text-muted">&copy; 2025 Groceries App. All Rights Reserved.</p>
+    </footer>
+
+    <!-- Cart Modal -->
+    <div class="modal fade" id="cartModal" tabindex="-1" aria-labelledby="cartModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title" id="cartModalLabel"><i class="bi bi-cart-fill me-2"></i>Your Shopping Cart</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="cart-items-container">
+                        <!-- Cart items will be dynamically inserted here -->
+                    </div>
+                    <div class="mt-3 text-end">
+                        <h4 id="cart-total-display">Total: $0.00</h4>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Continue Shopping</button>
+                    <button type="button" class="btn btn-success" onclick="finalCheckout()">
+                        <i class="bi bi-check-circle-fill me-1"></i> Proceed to Checkout
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Load Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" xintegrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+
+    <!-- Custom JavaScript for API Calls and Rendering -->
+    <script>
+        // Placeholder API URL - MUST MATCH YOUR BACKEND!
+        const API_BASE_URL = 'http://localhost:3000/api'; 
+        const CART_STORAGE_KEY = 'ecommCart'; // Key for localStorage
+        
+        // --- MOCK DATA (Updated to reflect specific products in your MongoDB 'groceries' collection) ---
+        const MOCK_PRODUCTS = [
+            { id: 'p001', name: 'Organic Black Beans (Can)', price: 1.25, image_url: 'https://placehold.co/400x300/1e88e5/ffffff?text=Beans', stock: true },
+            { id: 'p002', name: 'Whole Wheat Bread (Loaf)', price: 3.75, image_url: 'https://placehold.co/400x300/6d4c41/ffffff?text=Bread', stock: true },
+            { id: 'p003', name: 'Dozen Large Eggs', price: 4.99, image_url: 'https://placehold.co/400x300/ffd54f/333333?text=Eggs', stock: true },
+            { id: 'p004', name: 'Unsalted Butter (1 lb)', price: 5.49, image_url: 'https://placehold.co/400x300/ff9800/ffffff?text=Butter', stock: true },
+        ];
+
+        let cart = []; // In-memory cart state
+
+        // --- Core Rendering Logic ---
+
+        function renderProductCard(product) {
+            // Use product.image_url if present, otherwise fall back to a placeholder
+            const imageUrl = product.image_url || `https://placehold.co/400x300/7f8c8d/ffffff?text=${product.name}`;
+            
+            // Use _id from MongoDB if available, otherwise fall back to mock id
+            const productId = product._id || product.id; 
+
+            const cardHtml = `
+                <div class="col-6 col-sm-4 col-lg-3">
+                    <div class="product-card">
+                        <img src="${imageUrl}" alt="${product.name}" class="product-img" onerror="this.onerror=null; this.src='https://placehold.co/400x300/7f8c8d/ffffff?text=Image+Error';">
+                        <div class="product-info">
+                            <h5 class="mb-1">${product.name}</h5>
+                            <p class="price-text">${formatPrice(product.price)}</p>
+                            
+                            <!-- Add to Cart Button -->
+                            <button class="btn btn-success add-to-cart-btn" onclick="addToCart('${productId}', '${product.name}', ${product.price})">
+                                <i class="bi bi-bag-plus"></i> Add to Cart
+                            </button>
+
+                            <!-- Direct Checkout Button -->
+                            <button class="btn btn-outline-success checkout-btn" onclick="checkoutNow('${productId}', ${product.price})">
+                                Buy Now
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            return cardHtml;
+        }
+
+        function renderProducts(products) {
+            const productListElement = document.getElementById('product-list');
+            if (!productListElement) return;
+
+            // Clear previous content
+            productListElement.innerHTML = ''; 
+
+            if (products.length === 0) {
+                productListElement.innerHTML = '<div class="col-12"><p class="text-center text-muted">No products found in this category.</p></div>';
+                return;
+            }
+
+            let allCards = '';
+            products.forEach(product => {
+                allCards += renderProductCard(product);
+            });
+
+            productListElement.innerHTML = allCards;
+        }
+
+        // --- Fetch & Initialization ---
+
+        async function fetchProducts() {
+            // Display loading state
+            document.getElementById('product-list').innerHTML = '<div class="col-12 text-center"><div class="spinner-border text-success" role="status"><span class="visually-hidden">Loading...</span></div><p class="mt-2 text-muted">Loading products from backend...</p></div>';
+
+            try {
+                // Fetching from the dedicated 'groceries' endpoint, assuming your backend exposes /api/groceries
+                const response = await fetch(`${API_BASE_URL}/groceries`);
+                
+                if (!response.ok) {
+                    throw new Error(`API returned status ${response.status}. Falling back to mock data.`);
+                }
+                
+                const data = await response.json();
+                renderProducts(data);
+            
+            } catch (error) {
+                console.error("Fetch error, falling back to mock data:", error);
+                
+                // Show a connection warning
+                const warningHtml = `
+                    <div class="alert alert-warning text-center" role="alert">
+                        Connection to backend failed or route not found. Displaying **mock data** for testing.
+                    </div>
+                `;
+                document.getElementById('product-list').innerHTML = warningHtml;
+                
+                // Render mock data
+                renderProducts(MOCK_PRODUCTS);
+            }
+        }
+
+        function loadCartFromStorage() {
+            const storedCart = localStorage.getItem(CART_STORAGE_KEY);
+            cart = storedCart ? JSON.parse(storedCart) : [];
+        }
+
+        function saveCartToStorage() {
+            localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cart));
+        }
+
+        window.onload = () => {
+            loadCartFromStorage(); // Load the cart state on page load
+            updateCartCount();
+            fetchProducts();
+        };
+
+        // --- Utility Functions ---
+
+        function formatPrice(price) {
+            return new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: 'USD',
+                minimumFractionDigits: 2,
+            }).format(price);
+        }
+
+        function updateCartCount() {
+            const count = cart.reduce((sum, item) => sum + (item.quantity || 1), 0);
+            const countElement = document.getElementById('cart-count');
+            countElement.textContent = count;
+            countElement.style.display = count > 0 ? 'inline-block' : 'none';
+        }
+
+        function showToast(message, isSuccess = true) {
+            const toastClass = isSuccess ? 'bg-success' : 'bg-danger';
+            const toastHtml = `
+                <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1050;">
+                    <div class="toast show text-white ${toastClass} border-0" role="alert" aria-live="assertive" aria-atomic="true">
+                        <div class="d-flex">
+                            <div class="toast-body">${message}</div>
+                            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.body.insertAdjacentHTML('beforeend', toastHtml);
+            setTimeout(() => {
+                document.querySelector('.toast-container')?.remove();
+            }, 3000);
+        }
+
+        // --- Interaction Handlers ---
+
+        function goBack() {
+            window.location.href = 'interface.html';
+        }
+
+        function addToCart(productId, productName, price) {
+            // Placeholder for API call: POST /api/cart
+            const existingItem = cart.find(item => item.id === productId);
+            if (existingItem) {
+                existingItem.quantity += 1;
+            } else {
+                cart.push({ id: productId, name: productName, price: price, quantity: 1 });
+            }
+            saveCartToStorage(); // Save to localStorage
+            updateCartCount();
+            console.log(`Added ${productName} to cart. Cart contents:`, cart);
+            showToast(`${productName} added to cart!`);
+        }
+
+        function checkoutNow(productId, price) {
+            // Find the full product object from MOCK_PRODUCTS to ensure we pass the name correctly
+            const productToBuy = MOCK_PRODUCTS.find(p => (p._id || p.id) === productId) || { name: 'Item', price: price };
+
+            // Clear current cart and add only the 'Buy Now' item
+            cart = [{ id: productId, name: productToBuy.name, price: price, quantity: 1 }];
+            saveCartToStorage(); // Save single item to localStorage
+            
+            // Redirect to checkout
+            window.location.href = 'checkout.html';
+        }
+
+        // Renders the cart contents inside the modal
+        function renderCartItems() {
+            const container = document.getElementById('cart-items-container');
+            const totalDisplay = document.getElementById('cart-total-display');
+            let total = 0;
+            let cartHtml = '';
+
+            if (cart.length === 0) {
+                container.innerHTML = '<p class="text-center text-muted">Your cart is empty.</p>';
+                totalDisplay.textContent = 'Total: ' + formatPrice(0);
+                return;
+            }
+
+            cart.forEach((item, index) => {
+                const itemTotal = item.price * item.quantity;
+                total += itemTotal;
+
+                cartHtml += `
+                    <div class="cart-item">
+                        <div>
+                            <p class="mb-0 fw-bold">${item.name} <span class="badge bg-secondary">${item.quantity}x</span></p>
+                            <small class="text-muted">${formatPrice(item.price)} each</small>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <span class="fw-bold me-3">${formatPrice(itemTotal)}</span>
+                            <button class="btn btn-sm btn-outline-danger" onclick="deleteItem(${index})">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = cartHtml;
+            totalDisplay.textContent = 'Total: ' + formatPrice(total);
+        }
+
+        function deleteItem(index) {
+            // Removes the item at the specified index from the cart
+            const deletedName = cart[index].name;
+            cart.splice(index, 1);
+            
+            saveCartToStorage(); // Save updated state
+            
+            // Re-render the cart items and update counts
+            renderCartItems();
+            updateCartCount();
+            showToast(`${deletedName} removed from cart.`, false);
+        }
+
+        function viewCart() {
+            // Renders the current state of the cart before showing the modal
+            renderCartItems();
+            
+            // Show the Bootstrap modal
+            const cartModal = new bootstrap.Modal(document.getElementById('cartModal'));
+            cartModal.show();
+        }
+
+        function finalCheckout() {
+            // 1. Save final cart state (CRUCIAL for checkout.html to read it)
+            saveCartToStorage();
+            
+            // 2. Redirect to the checkout page
+            window.location.href = 'checkout.html'; 
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checkout - Finalize Order</title>
+    <!-- Load Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
+    <!-- Load Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Inter', sans-serif;
+        }
+        .checkout-card {
+            border-radius: 1rem;
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1);
+        }
+        .order-summary {
+            background-color: #e9ecef;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+        }
+        .loading-spinner {
+            display: none;
+            margin-left: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Main Content -->
+    <main class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <div class="card checkout-card">
+                    <div class="card-body p-4 p-md-5">
+                        <h1 class="h3 mb-4 fw-bold text-center text-primary">Final Step: Order Confirmation</h1>
+
+                        <div class="row g-4">
+                            
+                            <!-- Left Column: Customer and Action -->
+                            <div class="col-md-6 order-md-1">
+                                <h4 class="mb-3">Customer Details</h4>
+                                <form id="checkout-form" class="needs-validation" novalidate>
+                                    <div class="mb-4">
+                                        <label for="customerName" class="form-label">Customer Name</label>
+                                        <input type="text" class="form-control" id="customerName" placeholder="Enter your name for the invoice" required>
+                                        <div class="invalid-feedback">
+                                            Customer name is required.
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Place Order Button -->
+                                    <button class="btn btn-success btn-lg w-100 mb-3" type="button" onclick="placeOrder()">
+                                        <i class="bi bi-box-seam me-2"></i> Place Order
+                                    </button>
+
+                                    <!-- Gemini Feature Button -->
+                                    <button class="btn btn-outline-info w-100 mb-4" type="button" onclick="generateConfirmationText()">
+                                        Generate Confirmation Text ✨
+                                        <span id="gemini-loading" class="spinner-border spinner-border-sm loading-spinner" role="status" aria-hidden="true"></span>
+                                    </button>
+                                    
+                                    <!-- Back Button -->
+                                    <button class="btn btn-outline-secondary w-100" type="button" onclick="window.location.href = 'interface.html'">
+                                        <i class="bi bi-arrow-left me-2"></i> Back to Shopping
+                                    </button>
+                                </form>
+
+                                <!-- Gemini Output Area -->
+                                <div id="gemini-output" class="mt-4 p-3 border rounded" style="display: none; background-color: #f0f8ff;">
+                                    <h6 class="text-info"><i class="bi bi-robot me-1"></i> Confirmation Message Draft:</h6>
+                                    <p id="confirmation-text" class="mb-0 small"></p>
+                                </div>
+
+                            </div>
+                            
+                            <!-- Right Column: Order Summary -->
+                            <div class="col-md-6 order-md-2">
+                                <div class="order-summary">
+                                    <h4 class="d-flex justify-content-between align-items-center mb-3">
+                                        <span>Your Order</span>
+                                        <span class="badge bg-primary rounded-pill" id="item-count">0 items</span>
+                                    </h4>
+                                    <ul class="list-group mb-3" id="order-item-list">
+                                        <!-- Items will be injected here -->
+                                    </ul>
+
+                                    <div class="d-flex justify-content-between pt-2 border-top">
+                                        <strong class="text-dark">Grand Total</strong>
+                                        <strong class="text-success" id="grand-total">$0.00</strong>
+                                    </div>
+                                    <small class="text-muted mt-2 d-block">Note: Payment is handled upon delivery.</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Final Confirmation Modal -->
+    <div class="modal fade" id="confirmationModal" tabindex="-1" aria-labelledby="confirmationModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title" id="confirmationModalLabel"><i class="bi bi-check-circle me-2"></i> Order Placed Successfully!</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <h2 class="text-success mb-3">Thank You!</h2>
+                    <p>Your order has been placed and is being processed.</p>
+                    <p class="fw-bold">We will contact <span id="conf-customer-name"></span> shortly.</p>
+                </div>
+                <div class="modal-footer justify-content-center">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" onclick="window.location.href = 'interface.html'">
+                        Return to Dashboard
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Load Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
+
+    <script>
+        // --- API & Utility Constants ---
+        const API_BASE_URL = 'http://localhost:3000/api'; // Base URL for your Node.js backend
+        const API_KEY = ""; // Placeholder for Gemini API Key
+        const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=" + API_KEY;
+        const CART_STORAGE_KEY = 'ecommCart';
+
+        // --- Global State ---
+        let cart = [];
+        let grandTotal = 0;
+
+        // --- Functions ---
+
+        const formatPrice = (price) => {
+            return new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: 'USD',
+                minimumFractionDigits: 2,
+            }).format(price || 0);
+        };
+
+        const loadCartData = () => {
+            const storedCart = localStorage.getItem(CART_STORAGE_KEY);
+            cart = storedCart ? JSON.parse(storedCart) : [];
+            renderOrderSummary();
+        };
+
+        const renderOrderSummary = () => {
+            const itemList = document.getElementById('order-item-list');
+            const totalElement = document.getElementById('grand-total');
+            const itemCountElement = document.getElementById('item-count');
+            
+            itemList.innerHTML = '';
+            grandTotal = 0;
+
+            if (cart.length === 0) {
+                itemList.innerHTML = '<li class="list-group-item text-center text-muted">Your cart is empty.</li>';
+                document.querySelector('.btn-success.btn-lg').disabled = true;
+            } else {
+                document.querySelector('.btn-success.btn-lg').disabled = false;
+                cart.forEach(item => {
+                    const listItem = document.createElement('li');
+                    listItem.className = 'list-group-item d-flex justify-content-between lh-sm';
+                    const itemTotal = item.price * (item.quantity || 1);
+                    grandTotal += itemTotal;
+                    
+                    listItem.innerHTML = `
+                        <div>
+                            <h6 class="my-0">${item.name}</h6>
+                            <small class="text-muted">${formatPrice(item.price)} x ${item.quantity || 1}</small>
+                        </div>
+                        <span class="text-success">${formatPrice(itemTotal)}</span>
+                    `;
+                    itemList.appendChild(listItem);
+                });
+            }
+            
+            totalElement.textContent = formatPrice(grandTotal);
+            itemCountElement.textContent = `${cart.length} item${cart.length !== 1 ? 's' : ''}`;
+        };
+
+        const placeOrder = () => {
+            const customerNameInput = document.getElementById('customerName');
+            const customerName = customerNameInput.value.trim();
+            const form = document.getElementById('checkout-form');
+            
+            // 1. Validation
+            if (!form.checkValidity() || cart.length === 0) {
+                form.classList.add('was-validated');
+                customerNameInput.focus();
+                return;
+            }
+
+            const orderPayload = {
+                customerName: customerName,
+                // Replace with actual user ID if implemented
+                userId: 'anonymous-checkout-user', 
+                items: cart, // The full cart array
+                grandTotal: grandTotal,
+                timestamp: new Date().toISOString()
+            };
+
+            // --- API INTEGRATION: Send Order to MongoDB via Backend ---
+            fetch(`${API_BASE_URL}/orders`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(orderPayload)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    // Throw error if the server response is not 200-299
+                    throw new Error(`Order placement failed on the server. Status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log("Order successful, MongoDB insertion confirmed:", data);
+                
+                // 1. Show Confirmation Modal
+                document.getElementById('conf-customer-name').textContent = customerName;
+                const confirmationModal = new bootstrap.Modal(document.getElementById('confirmationModal'));
+                confirmationModal.show();
+                
+                // 2. Clear Cart (After successful order submission)
+                localStorage.removeItem(CART_STORAGE_KEY);
+                cart = [];
+                // Update UI after a short delay
+                setTimeout(loadCartData, 2000); 
+            })
+            .catch(error => {
+                console.error("Error placing order:", error);
+                // Display a simple error message to the user
+                alert(`Order Submission Failed: ${error.message}. Please check your backend connection.`);
+            });
+        };
+
+        async function generateConfirmationText() {
+            const loading = document.getElementById('gemini-loading');
+            const outputDiv = document.getElementById('gemini-output');
+            const confirmationText = document.getElementById('confirmation-text');
+            const customerName = document.getElementById('customerName').value || 'Customer';
+
+            if (cart.length === 0) {
+                confirmationText.textContent = "Please add items to your cart before generating a confirmation message.";
+                outputDiv.style.display = 'block';
+                return;
+            }
+
+            loading.style.display = 'inline-block';
+            outputDiv.style.display = 'none';
+            confirmationText.textContent = '';
+
+            const itemDetails = cart.map(item => `${item.name} (Qty: ${item.quantity || 1})`).join(', ');
+            const userQuery = `Draft a very brief, friendly order confirmation message for a customer named ${customerName}. Their total order value is ${formatPrice(grandTotal)}. The items purchased are: ${itemDetails}. Keep the message concise (1-2 sentences).`;
+
+            try {
+                const maxRetries = 3;
+                let response;
+
+                for (let attempt = 0; attempt < maxRetries; attempt++) {
+                    response = await fetch(GEMINI_API_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            contents: [{ parts: [{ text: userQuery }] }],
+                            systemInstruction: { parts: [{ text: "You are a friendly, helpful e-commerce assistant." }] }
+                        })
+                    });
+
+                    if (response.ok) {
+                        break;
+                    }
+
+                    if (attempt < maxRetries - 1) {
+                        const delay = Math.pow(2, attempt) * 1000;
+                        await new Promise(resolve => setTimeout(resolve, delay));
+                    } else {
+                        throw new Error(`Failed to fetch from Gemini API after ${maxRetries} attempts.`);
+                    }
+                }
+                
+                const result = await response.json();
+                const text = result.candidates?.[0]?.content?.parts?.[0]?.text || "Could not generate confirmation text.";
+                confirmationText.textContent = text;
+
+            } catch (error) {
+                console.error("Gemini API Error:", error);
+                confirmationText.textContent = "Error generating message. Please check the console for API details.";
+            } finally {
+                loading.style.display = 'none';
+                outputDiv.style.display = 'block';
+            }
+        }
+
+        // --- Initialization ---
+        window.onload = loadCartData;
+    </script>
+</body>
+</html>

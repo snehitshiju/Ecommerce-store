@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E-Commerce Category Dashboard</title>
+    <!-- Load Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
+    <!-- Load Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <style>
+        :root {
+            --category-text-color: #ffffff; /* White text for better contrast against images */
+        }
+        body {
+            background-color: #f8f9fa; 
+            font-family: 'Inter', sans-serif;
+        }
+
+        .category-grid {
+            padding: 20px 0;
+        }
+
+        /* Base Card/Section Styling */
+        .category-card {
+            min-height: 200px;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
+            position: relative;
+        }
+
+        .category-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+        }
+
+        /* The actual Bootstrap button covering the card */
+        .category-btn {
+            width: 100%;
+            height: 100%;
+            padding: 0;
+            margin: 0;
+            border: none;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: absolute;
+            top: 0;
+            left: 0;
+            /* Ensure the button is visually transparent so the background image shows */
+            background-color: transparent !important; 
+        }
+
+        .category-text {
+            color: var(--category-text-color);
+            font-size: 1.5rem;
+            font-weight: 700;
+            text-shadow: 0 2px 5px rgba(0, 0, 0, 0.8); /* Strong shadow for readability over any image */
+            z-index: 2; 
+            padding: 15px;
+            line-height: 1.2;
+        }
+        
+        /* Container that holds the background image */
+        .category-image-container {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            background-size: cover; /* Ensures the image covers the whole area */
+            background-position: center;
+            transition: transform 0.5s ease;
+        }
+        
+        .category-card:hover .category-image-container {
+            transform: scale(1.05); /* Slight zoom effect on hover */
+        }
+
+        /* Dark overlay for better text readability */
+        .category-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.3); /* Semi-transparent dark overlay */
+            border-radius: 12px;
+            z-index: 1;
+        }
+        
+        /* Cart Modal styling */
+        .cart-item-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        /* --- Category Image Customization (Retained) --- */
+        #category-1 .category-image-container {
+            background-image: url('data:image/jpeg;base64,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'); 
+        }
+        #category-2 .category-image-container {
+            background-image: url('https://img.freepik.com/free-photo/top-view-supplies-arrangement-with-green-background_23-2149491446.jpg?semt=ais_hybrid&w=740&q=80'); 
+        }
+        #category-3 .category-image-container {
+            /* Food and beverage */
+            background-image: url('https://img.freepik.com/free-vector/collection-delicious-snacks_23-2147914461.jpg?semt=ais_hybrid&w=740&q=80'); 
+        }
+        #category-4 .category-image-container {
+            background-image: url('https://5.imimg.com/data5/RC/PO/ZK/SELLER-95283550/school-stationary.jpg'); 
+        }
+        #category-5 .category-image-container {
+            background-image: url('https://www.shutterstock.com/image-photo/different-modern-devices-gadgets-on-260nw-2399256457.jpg'); 
+        }
+        #category-6 .category-image-container {
+            background-image: url('https://static-assets.business.amazon.com/assets/in/24th-jan/705_Website_Blog_Appliances_1450x664.jpg.transform/1450x664/image.jpg'); 
+        }
+        #category-7 .category-image-container {
+            background-image: url('https://www.shutterstock.com/image-photo/colorful-tshirts-on-wooden-hanger-260nw-2253421821.jpg'); 
+        }
+    </style>
+</head>
+<body onload="updateCartCount();">
+
+    <!-- Top Navigation Bar (Header) -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm">
+        <div class="container-fluid container-lg">
+            <a class="navbar-brand fw-bold" href="#">
+                <i class="bi bi-shop me-2"></i>Dashboard
+            </a>
+            <div class="d-flex align-items-center">
+                
+                <!-- 1. LOGOUT BUTTON (Simplified from Dropdown) -->
+                <button class="btn btn-outline-light me-3" type="button" onclick="logout()">
+                    <i class="bi bi-box-arrow-right me-1"></i> Logout
+                </button>
+                
+                <!-- 2. CART BUTTON -->
+                <button id="cart-btn" class="btn btn-primary position-relative" type="button" onclick="viewCartModal()">
+                    <i class="bi bi-cart-fill"></i> Cart
+                    <span id="cart-count" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="display: none;">
+                        0
+                        <span class="visually-hidden">items in cart</span>
+                    </span>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Cart Modal (Placed at the dashboard level to be viewable) -->
+    <div class="modal fade" id="cartModal" tabindex="-1" aria-labelledby="cartModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title" id="cartModalLabel"><i class="bi bi-cart-fill me-2"></i>Your Shopping Cart</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="dashboard-cart-items-container">
+                        <!-- Cart items will be dynamically inserted here -->
+                    </div>
+                    <div class="mt-3 text-end">
+                        <h4 id="dashboard-cart-total-display">Total: $0.00</h4>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Continue Browsing</button>
+                    <button type="button" class="btn btn-success" onclick="finalCheckoutRedirect()">
+                        <i class="bi bi-check-circle-fill me-1"></i> Proceed to Checkout
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Main Content: Category Grid -->
+    <main class="container-lg my-5">
+        <h1 class="mb-5 text-dark text-center display-5 fw-bold">Explore Our Departments</h1>
+        
+        <div class="row g-4 category-grid">
+            
+            <!-- Category 1: Groceries -->
+            <div class="col-12 col-sm-6 col-lg-4">
+                <div class="category-card" id="category-1">
+                    <div class="category-image-container"></div>
+                    <div class="category-overlay"></div>
+                    <button class="category-btn" onclick="selectCategory('Groceries')">
+                        <span class="category-text">1. Groceries</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Category 2: Kitchen utensils -->
+            <div class="col-12 col-sm-6 col-lg-4">
+                <div class="category-card" id="category-2">
+                    <div class="category-image-container"></div>
+                    <div class="category-overlay"></div>
+                    <button class="category-btn" onclick="selectCategory('Kitchen utensils')">
+                        <span class="category-text">2. Kitchen utensils</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Category 3: Foood and beverage -->
+            <div class="col-12 col-sm-6 col-lg-4">
+                <div class="category-card" id="category-3">
+                    <div class="category-image-container"></div>
+                    <div class="category-overlay"></div>
+                    <button class="category-btn" onclick="selectCategory('Foood and beverage')">
+                        <span class="category-text">3. Foood and beverage</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Category 4: Stationary -->
+            <div class="col-12 col-sm-6 col-lg-4">
+                <div class="category-card" id="category-4">
+                    <div class="category-image-container"></div>
+                    <div class="category-overlay"></div>
+                    <button class="category-btn" onclick="selectCategory('Stationary')">
+                        <span class="category-text">4. Stationary</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Category 5: Electronics -->
+            <div class="col-12 col-sm-6 col-lg-4">
+                <div class="category-card" id="category-5">
+                    <div class="category-image-container"></div>
+                    <div class="category-overlay"></div>
+                    <button class="category-btn" onclick="selectCategory('Electronics')">
+                        <span class="category-text">5. Electronics</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Category 6: Home appliances -->
+            <div class="col-12 col-sm-6 col-lg-4">
+                <div class="category-card" id="category-6">
+                    <div class="category-image-container"></div>
+                    <div class="category-overlay"></div>
+                    <button class="category-btn" onclick="selectCategory('Home appliances')">
+                        <span class="category-text">6. Home appliances</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Category 7: Fashion -->
+            <div class="col-12 col-sm-6 col-lg-4 mx-auto">
+                <div class="category-card" id="category-7">
+                    <div class="category-image-container"></div>
+                    <div class="category-overlay"></div>
+                    <button class="category-btn" onclick="selectCategory('Fashion')">
+                        <span class="category-text">7. Fashion</span>
+                    </button>
+                </div>
+            </div>
+            
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-white text-center py-3 mt-5">
+        <p class="m-0 text-muted">&copy; 2025 E-Commerce App. All Rights Reserved.</p>
+    </footer>
+
+    <!-- Load Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
+
+    <script>
+        const CART_STORAGE_KEY = 'ecommCart';
+        const USER_TOKEN_KEY = 'token';
+        const USER_DATA_KEY = 'user'; // Key for storing user name/email
+        
+        // --- Utility Functions ---
+
+        function formatPrice(price) {
+            return new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: 'USD',
+                minimumFractionDigits: 2,
+            }).format(price);
+        }
+
+        // --- User/Auth Functions ---
+
+        function logout() {
+            // 1. Clear all user data and token
+            localStorage.removeItem(USER_TOKEN_KEY);
+            localStorage.removeItem(USER_DATA_KEY);
+            
+            // 2. Redirect to the login page
+            window.location.href = 'login.html'; 
+        }
+
+        // --- Cart Functions ---
+
+        function getCart() {
+            const storedCart = localStorage.getItem(CART_STORAGE_KEY);
+            return storedCart ? JSON.parse(storedCart) : [];
+        }
+
+        function saveCart(cart) {
+            localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cart));
+        }
+
+        function updateCartCount() {
+            const cart = getCart();
+            const count = cart.reduce((sum, item) => sum + (item.quantity || 1), 0);
+            const countElement = document.getElementById('cart-count');
+            
+            countElement.textContent = count;
+            countElement.style.display = count > 0 ? 'inline-block' : 'none';
+        }
+
+        function deleteItem(index) {
+            let cart = getCart();
+            if (index >= 0 && index < cart.length) {
+                cart.splice(index, 1);
+                saveCart(cart); // Persist the change
+                
+                // Re-render the modal content and update counts
+                renderCartItems();
+                updateCartCount();
+                console.log(`Item deleted from cart at index ${index}.`);
+            }
+        }
+
+
+        function renderCartItems() {
+            const cart = getCart();
+            const container = document.getElementById('dashboard-cart-items-container');
+            const totalDisplay = document.getElementById('dashboard-cart-total-display');
+            let total = 0;
+            let cartHtml = '';
+
+            if (cart.length === 0) {
+                container.innerHTML = '<p class="text-center text-muted">Cart is empty. Add items from a category page.</p>';
+                totalDisplay.textContent = 'Total: ' + formatPrice(0);
+                return;
+            }
+            
+            cart.forEach((item, index) => {
+                const itemTotal = item.price * (item.quantity || 1);
+                total += itemTotal;
+
+                cartHtml += `
+                    <div class="cart-item-row">
+                        <div class="me-3">
+                            <p class="mb-0 fw-bold">${item.name}</p>
+                            <small class="text-muted">${formatPrice(item.price)} x ${item.quantity || 1}</small>
+                        </div>
+                        <div class="d-flex align-items-center">
+                             <span class="fw-bold me-3">${formatPrice(itemTotal)}</span>
+                             <button class="btn btn-sm btn-outline-danger" onclick="deleteItem(${index})">
+                                <i class="bi bi-trash"></i>
+                             </button>
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = cartHtml;
+            totalDisplay.textContent = 'Total: ' + formatPrice(total);
+        }
+        
+        function viewCartModal() {
+            renderCartItems();
+            const cartModal = new bootstrap.Modal(document.getElementById('cartModal'));
+            cartModal.show();
+        }
+
+        function finalCheckoutRedirect() {
+            const cart = getCart();
+            if (cart.length === 0) {
+                console.error("Cart is empty. Cannot proceed to checkout.");
+                return; 
+            }
+            // Cart data is already saved in localStorage, just redirect
+            window.location.href = 'checkout.html';
+        }
+
+
+        // --- Navigation Function (Kept as is) ---
+
+        function selectCategory(categoryName) {
+            // Mapping category names to the exact filenames in your file structure.
+            const redirectMap = {
+                'Groceries': 'Groceries.html',
+                'Kitchen utensils': 'utensils.html',
+                'Foood and beverage': 'snacls.html',
+                'Stationary': 'stationary.html', 
+                'Electronics': 'Electronics.html',
+                'Home appliances': 'Applainces.html',
+                'Fashion': 'fashion.html'
+            };
+
+            const targetFile = redirectMap[categoryName];
+
+            if (targetFile) {
+                window.location.href = targetFile;
+            } else {
+                console.log(`Navigating to products for category: ${categoryName}`);
+            }
+        }
+    </script>
+</body>
+</html>

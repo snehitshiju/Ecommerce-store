@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fashion - Product Listing</title>
+    <!-- Load Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
+    <!-- Load Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Inter', sans-serif;
+        }
+        .product-card {
+            border: 1px solid #dee2e6;
+            border-radius: 12px;
+            padding: 15px;
+            text-align: center;
+            background-color: white;
+            transition: box-shadow 0.3s;
+        }
+        .product-card:hover {
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        .product-img {
+            width: 100%;
+            height: 150px;
+            object-fit: contain;
+            margin-bottom: 10px;
+        }
+        .price-text {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #dc3545; /* Red for Fashion */
+        }
+        .add-to-cart-btn, .checkout-btn {
+            width: 100%;
+            margin-top: 10px;
+            font-weight: 600;
+        }
+        .cart-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Top Navigation Bar (Header) -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-danger shadow-sm">
+        <div class="container-fluid container-lg">
+            <a class="navbar-brand fw-bold" href="#">
+                <i class="bi bi-tag-fill me-2"></i>Fashion
+            </a>
+            <div class="d-flex">
+                <a href="#" class="btn btn-outline-light me-3" onclick="goBack()">
+                    <i class="bi bi-arrow-left"></i> Back to Dashboard
+                </a>
+                <!-- Main Cart Button -->
+                <button id="cart-btn" class="btn btn-light position-relative" type="button" onclick="viewCart()">
+                    <i class="bi bi-cart-fill"></i> Cart 
+                    <span id="cart-count" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                        0
+                    </span>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content: Product Grid -->
+    <main class="container-lg my-5">
+        <h1 class="mb-5 text-dark display-6 fw-bold text-center">Apparel & Accessories</h1>
+        
+        <div id="product-list" class="row g-4">
+            <!-- Product Cards will be rendered here -->
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-white text-center py-3 mt-5">
+        <p class="m-0 text-muted">&copy; 2025 E-Commerce App. All Rights Reserved.</p>
+    </footer>
+
+    <!-- Cart Modal -->
+    <div class="modal fade" id="cartModal" tabindex="-1" aria-labelledby="cartModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title" id="cartModalLabel"><i class="bi bi-cart-fill me-2"></i>Your Shopping Cart</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="cart-items-container">
+                        <!-- Cart items will be dynamically inserted here -->
+                    </div>
+                    <div class="mt-3 text-end">
+                        <h4 id="cart-total-display">Total: $0.00</h4>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Continue Shopping</button>
+                    <button type="button" class="btn btn-danger" onclick="finalCheckout()">
+                        <i class="bi bi-check-circle-fill me-1"></i> Proceed to Checkout
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Load Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
+
+    <!-- Custom JavaScript for API Calls and Rendering -->
+    <script>
+        // Placeholder API URL - MUST MATCH YOUR BACKEND!
+        const API_BASE_URL = 'http://localhost:3000/api'; 
+        const CART_STORAGE_KEY = 'ecommCart'; // Key for localStorage
+        
+        // --- Mock Data (Fashion) ---
+        const MOCK_PRODUCTS = [
+            { name: 'Summer Floral Dress', price: 45.00, image_url: 'https://placehold.co/100x100/FFC0CB/000?text=Dress', stock: true },
+            { name: 'Slim Fit Blazer', price: 85.00, image_url: 'https://placehold.co/100x100/4682B4/FFF?text=Blazer', stock: true },
+            { name: 'Casual T-shirt (3-Pack)', price: 30.00, image_url: 'https://placehold.co/100x100/F0F8FF/000?text=Tshirt', stock: true },
+            { name: 'Denim Jeans (Slim Fit)', price: 55.00, image_url: 'https://placehold.co/100x100/4169E1/FFF?text=Jeans', stock: true },
+            { name: 'Leather Belt', price: 25.00, image_url: 'https://placehold.co/100x100/8B4513/FFF?text=Belt', stock: true },
+        ];
+
+        let cart = []; // In-memory cart state
+
+        // --- Core Rendering Logic ---
+
+        function renderProductCard(product) {
+            const imageUrl = product.image_url || product.image || `https://placehold.co/400x300/7f8c8d/ffffff?text=${product.name}`;
+            const productId = product._id || product.id; 
+
+            const cardHtml = `
+                <div class="col-6 col-sm-4 col-lg-3">
+                    <div class="product-card">
+                        <!-- Product Image -->
+                        <img src="${imageUrl}" alt="${product.name}" class="product-img" onerror="this.onerror=null; this.src='https://placehold.co/400x300/7f8c8d/ffffff?text=Image+Error';">
+                        <div class="product-info">
+                            <h5 class="mb-1">${product.name}</h5>
+                            <p class="price-text">${formatPrice(product.price)}</p>
+                            
+                            <!-- Add to Cart Button -->
+                            <button class="btn btn-danger add-to-cart-btn" onclick="addToCart('${productId}', '${product.name}', ${product.price})">
+                                <i class="bi bi-bag-plus"></i> Add to Cart
+                            </button>
+
+                            <!-- Direct Checkout Button -->
+                            <button class="btn btn-outline-danger checkout-btn" onclick="checkoutNow('${productId}', ${product.price})">
+                                Buy Now
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            return cardHtml;
+        }
+
+        function renderProducts(products) {
+            const productListElement = document.getElementById('product-list');
+            if (!productListElement) return;
+
+            productListElement.innerHTML = ''; 
+
+            if (products.length === 0) {
+                productListElement.innerHTML = '<div class="col-12"><p class="text-center text-muted">No products found in this category.</p></div>';
+                return;
+            }
+
+            let allCards = '';
+            products.forEach(product => {
+                allCards += renderProductCard(product);
+            });
+
+            productListElement.innerHTML = allCards;
+        }
+
+        // --- Fetch & Initialization ---
+
+        async function fetchProducts() {
+            // Display loading state
+            document.getElementById('product-list').innerHTML = '<div class="col-12 text-center"><div class="spinner-border text-danger" role="status"><span class="visually-hidden">Loading...</span></div><p class="mt-2 text-muted">Loading products from backend...</p></div>';
+
+            try {
+                // *** API Call aligned with the dedicated 'fashion' endpoint ***
+                const response = await fetch(`${API_BASE_URL}/fashion`);
+                
+                if (!response.ok) {
+                    throw new Error(`API returned status ${response.status}. Falling back to mock data.`);
+                }
+                
+                const data = await response.json();
+                renderProducts(data);
+            
+            } catch (error) {
+                console.error("Fetch error, falling back to mock data:", error);
+                
+                // Show a connection warning
+                const warningHtml = `
+                    <div class="alert alert-warning text-center" role="alert">
+                        Connection to backend failed or route not found. Displaying **mock data** for testing.
+                    </div>
+                `;
+                document.getElementById('product-list').innerHTML = warningHtml;
+                
+                // Render mock data
+                renderProducts(MOCK_PRODUCTS);
+            }
+        }
+
+        function loadCartFromStorage() {
+            const storedCart = localStorage.getItem(CART_STORAGE_KEY);
+            cart = storedCart ? JSON.parse(storedCart) : [];
+        }
+
+        function saveCartToStorage() {
+            localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cart));
+        }
+
+        window.onload = () => {
+            loadCartFromStorage(); 
+            updateCartCount();
+            fetchProducts();
+        };
+
+        // --- Utility Functions ---
+
+        function formatPrice(price) {
+            return new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: 'USD',
+                minimumFractionDigits: 2,
+            }).format(price);
+        }
+
+        function updateCartCount() {
+            const count = cart.reduce((sum, item) => sum + (item.quantity || 1), 0);
+            const countElement = document.getElementById('cart-count');
+            countElement.textContent = count;
+            countElement.style.display = count > 0 ? 'inline-block' : 'none';
+        }
+
+        function showToast(message, isSuccess = true) {
+            const toastClass = isSuccess ? 'bg-danger' : 'bg-secondary';
+            const toastHtml = `
+                <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1050;">
+                    <div class="toast show text-white ${toastClass} border-0" role="alert" aria-live="assertive" aria-atomic="true">
+                        <div class="d-flex">
+                            <div class="toast-body">${message}</div>
+                            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.body.insertAdjacentHTML('beforeend', toastHtml);
+            setTimeout(() => {
+                document.querySelector('.toast-container')?.remove();
+            }, 3000);
+        }
+
+        // --- Interaction Handlers ---
+
+        function goBack() {
+            window.location.href = 'interface.html';
+        }
+
+        function addToCart(productId, productName, price) {
+            const existingItem = cart.find(item => item.id === productId);
+            if (existingItem) {
+                existingItem.quantity += 1;
+            } else {
+                cart.push({ id: productId, name: productName, price: price, quantity: 1 });
+            }
+            saveCartToStorage(); 
+            updateCartCount();
+            showToast(`${productName} added to cart!`);
+        }
+
+        function checkoutNow(productId, price) {
+            const productToBuy = MOCK_PRODUCTS.find(p => (p._id || p.id) === productId) || { name: 'Item', price: price };
+
+            cart = [{ id: productId, name: productToBuy.name, price: price, quantity: 1 }];
+            saveCartToStorage(); 
+            
+            window.location.href = 'checkout.html';
+        }
+
+        function renderCartItems() {
+            const container = document.getElementById('cart-items-container');
+            const totalDisplay = document.getElementById('cart-total-display');
+            let total = 0;
+            let cartHtml = '';
+
+            if (cart.length === 0) {
+                container.innerHTML = '<p class="text-center text-muted">Your cart is empty.</p>';
+                totalDisplay.textContent = 'Total: ' + formatPrice(0);
+                return;
+            }
+
+            cart.forEach((item, index) => {
+                const itemTotal = item.price * item.quantity;
+                total += itemTotal;
+
+                cartHtml += `
+                    <div class="cart-item">
+                        <div>
+                            <p class="mb-0 fw-bold">${item.name} <span class="badge bg-secondary">${item.quantity}x</span></p>
+                            <small class="text-muted">${formatPrice(item.price)} each</small>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <span class="fw-bold me-3">${formatPrice(itemTotal)}</span>
+                            <button class="btn btn-sm btn-outline-danger" onclick="deleteItem(${index})">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = cartHtml;
+            totalDisplay.textContent = 'Total: ' + formatPrice(total);
+        }
+
+        function deleteItem(index) {
+            const deletedName = cart[index].name;
+            cart.splice(index, 1);
+            
+            saveCartToStorage(); 
+            
+            renderCartItems();
+            updateCartCount();
+            showToast(`${deletedName} removed from cart.`, false);
+        }
+
+        function viewCart() {
+            renderCartItems();
+            
+            const cartModal = new bootstrap.Modal(document.getElementById('cartModal'));
+            cartModal.show();
+        }
+
+        function finalCheckout() {
+            saveCartToStorage();
+            window.location.href = 'checkout.html'; 
+        }
+    </script>
+</body>
+</html>

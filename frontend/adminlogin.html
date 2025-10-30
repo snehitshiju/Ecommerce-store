@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Login - Secure Access</title>
+    <!-- Load Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
+    <!-- Load Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <style>
+        /* Custom styles to match the provided image */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f3f5; /* Light gray background */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .admin-login-card {
+            max-width: 450px;
+            width: 90%;
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .header-bg {
+            background-color: #8a2be2; /* BlueViolet / Deep Purple from the image */
+            color: white;
+            padding: 40px 20px;
+            text-align: center;
+        }
+        
+        .header-bg h1 {
+            font-weight: 800;
+            margin-bottom: 5px;
+        }
+
+        .form-content {
+            padding: 30px 40px;
+        }
+
+        .form-control {
+            border-radius: 8px;
+            padding: 12px 15px;
+            font-size: 1rem;
+            border: 1px solid #dee2e6;
+        }
+        
+        /* Custom Login Button */
+        .btn-admin-login {
+            background-color: white;
+            color: #8a2be2;
+            border: 2px solid #8a2be2;
+            font-weight: 700;
+            border-radius: 50px; /* Pill shape */
+            padding: 10px 20px;
+            font-size: 1.1rem;
+            transition: all 0.2s;
+        }
+        .btn-admin-login:hover {
+            background-color: #8a2be2;
+            color: white;
+            border-color: #8a2be2;
+        }
+        
+        /* Input Icon positioning */
+        .input-group-text {
+            background-color: white;
+            border-left: none;
+            color: #8a2be2;
+            border-radius: 0 8px 8px 0;
+            padding-right: 15px;
+        }
+        .input-group .form-control:focus {
+            z-index: 0; 
+        }
+        .input-group .form-control {
+            border-right: none;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="admin-login-card">
+        
+        <!-- Header Section -->
+        <div class="header-bg">
+            <h1>ADMIN LOGIN</h1>
+            <p class="mb-0">Hello there, Sign in and start managing your website</p>
+        </div>
+
+        <!-- Form Section -->
+        <div class="form-content">
+            <div id="admin-alert-area"></div>
+            <form id="adminLoginForm">
+                
+                <!-- Username Field -->
+                <div class="mb-4">
+                    <label for="adminUsername" class="form-label fw-semibold">Username</label>
+                    <div class="input-group">
+                        <input type="text" id="adminUsername" class="form-control" placeholder="admin@ecommercestore.com" required>
+                        <span class="input-group-text">
+                            <i class="bi bi-person-fill"></i>
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Password Field -->
+                <div class="mb-4">
+                    <label for="adminPassword" class="form-label fw-semibold">Password</label>
+                    <div class="input-group">
+                        <input type="password" id="adminPassword" class="form-control" placeholder="••••••••" required>
+                        <span class="input-group-text">
+                            <i class="bi bi-lock-fill"></i>
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Options Row -->
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="rememberMe">
+                        <label class="form-check-label small" for="rememberMe">Remember Me</label>
+                    </div>
+                    <a href="#" class="small text-decoration-none">Forgot Password?</a>
+                </div>
+
+                <!-- Login Button -->
+                <button type="submit" class="btn btn-admin-login w-100 mb-3">
+                    LOGIN <i class="bi bi-arrow-right"></i>
+                </button>
+            </form>
+            
+            <!-- NEW: Switch to User Login -->
+            <div class="text-center">
+                <a href="login.html" class="small fw-semibold text-secondary text-decoration-none">
+                    <i class="bi bi-arrow-left"></i> Back to User Login
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Load Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:3000/api';
+        const ADMIN_TOKEN_KEY = 'adminToken';
+        const ADMIN_DATA_KEY = 'adminUser';
+        const form = document.getElementById('adminLoginForm');
+        const alertArea = document.getElementById('admin-alert-area');
+        
+        // Function to display alerts
+        const showAlert = (message, type) => {
+            alertArea.innerHTML = `
+                <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            `;
+        };
+
+        // --- Form Submission Logic ---
+        const handleAdminLogin = async (event) => {
+            event.preventDefault();
+            form.classList.remove('was-validated');
+
+            const username = document.getElementById('adminUsername').value.trim();
+            const password = document.getElementById('adminPassword').value.trim();
+
+            if (!username || !password) {
+                showAlert('Username and password are required.', 'warning');
+                return;
+            }
+
+            try {
+                // *** API TARGET: /api/admin/login ***
+                const response = await fetch(`${API_BASE_URL}/admin/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: username, password: password }) // Using email as username for consistency
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showAlert('Login successful! Redirecting to Admin Dashboard...', 'success');
+                    console.log('Admin login successful:', data);
+                    
+                    // Store token and user data
+                    if (data.token) {
+                        localStorage.setItem(ADMIN_TOKEN_KEY, data.token); 
+                        // Store basic user data (name/email/role) for display/authorization
+                        localStorage.setItem(ADMIN_DATA_KEY, JSON.stringify({
+                            name: data.name || 'Admin',
+                            email: data.email,
+                            role: 'admin' 
+                        }));
+                    }
+
+                    // *** FINAL REDIRECTION TO ADMIN DASHBOARD ***
+                    setTimeout(() => {
+                        window.location.href = 'adminhandle.html';
+                    }, 500);
+
+                } else {
+                    const errorMessage = data.message || 'Invalid admin credentials.';
+                    showAlert(`Login failed: ${errorMessage}`, 'danger');
+                }
+
+            } catch (error) {
+                console.error('Network Error:', error);
+                showAlert('Could not connect to the backend server. Please check your network or ensure the server is running on port 3000.', 'danger');
+            }
+        };
+
+        // Attach event listener to the form submission
+        form.addEventListener('submit', handleAdminLogin);
+    </script>
+</body>
+</html>

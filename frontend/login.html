@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Account Login - Mini E-Commerce</title>
+    <!-- Load Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
+    <!-- Load Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <style>
+        /* Custom CSS to match the image style */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8f9fa; /* Light background */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .login-container {
+            max-width: 1000px;
+            width: 95%;
+            background-color: white;
+            border-radius: 15px; /* Rounded corners for the entire box */
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        .illustration-side {
+            background-color: #f0f8ff; /* Very light blue background for contrast */
+            border-radius: 15px 0 0 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            /* ADJUSTMENT: Reduced padding to give the image more space */
+            padding: 20px; 
+            overflow: hidden;
+            /* ADJUSTMENT: Slightly reduced min-height for better aspect ratio fitting */
+            min-height: 450px; 
+        }
+
+        /* --- FIX: Using Base64 Image to ensure reliable loading --- */
+        .illustration-img-container {
+            max-width: 100%;
+            height: 100%;
+            min-height: 350px;
+            width: 100%;
+            background-size: contain; /* Ensures the whole image is visible and scaled proportionally */
+            background-repeat: no-repeat;
+            background-position: center;
+            /* Placeholder Base64 image of a colorful shopping illustration */
+            background-image: url("https://plus.unsplash.com/premium_photo-1683758825237-de2f8946dd91?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTEwfHxlJTIwY29tbWVyY2V8ZW58MHx8MHx8fDA%3D&auto=format&fit=crop&q=60&w=600");
+        }
+
+        .form-side {
+            padding: 50px 60px;
+        }
+        /* ... rest of the CSS remains the same ... */
+
+        .welcome-text {
+            font-weight: 700;
+            color: #343a40;
+            line-height: 1.2;
+            margin-bottom: 30px;
+        }
+
+        /* Custom orange primary button to match the image */
+        .btn-custom-primary {
+            background-color: #ff6622;
+            border-color: #ff6622;
+            color: white;
+            font-weight: 600;
+            border-radius: 8px;
+            transition: background-color 0.2s;
+        }
+        .btn-custom-primary:hover {
+            background-color: #e65c1f;
+            border-color: #e65c1f;
+            color: white;
+        }
+
+        /* Custom secondary button style */
+        .btn-custom-secondary {
+            background-color: white;
+            border: 1px solid #ced4da;
+            color: #495057;
+            font-weight: 600;
+            border-radius: 8px;
+            transition: background-color 0.2s;
+        }
+        .btn-custom-secondary:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .profile-img-preview {
+            width: 80px;
+            height: 80px;
+            object-fit: cover;
+            border-radius: 50%;
+            border: 2px solid #ff6622;
+            margin-bottom: 10px;
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 992px) {
+            .illustration-side {
+                border-radius: 15px 15px 0 0;
+            }
+            .form-side {
+                padding: 40px 30px;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .form-side {
+                padding: 30px 20px;
+            }
+            .welcome-text {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="row g-0 login-container">
+        
+        <!-- Left Side: Illustration -->
+        <div class="col-lg-6 d-none d-lg-flex illustration-side">
+            <!-- Replacing <img> with a <div> to properly display the CSS background image -->
+            <div class="illustration-img-container" role="img" aria-label="Shopping Illustration of a person in a cart."></div>
+        </div>
+
+        <!-- Right Side: Login Form -->
+        <div class="col-lg-6 form-side">
+            <div id="alert-area"></div>
+            <h2 id="welcome-header" class="welcome-text display-6">
+                Welcome Back. Please Log In To Your Account.
+            </h2>
+
+            <form id="authForm">
+                <!-- Profile Image Upload (Hidden by default for login) -->
+                <div id="profileImageSection" class="mb-4 text-center" style="display: none;">
+                    <label for="profileImage" class="form-label fw-semibold">Optional Profile Picture</label>
+                    <div class="d-flex flex-column align-items-center">
+                        <img id="imagePreview" class="profile-img-preview" src="https://placehold.co/80x80/cccccc/333333?text=P" alt="Profile Preview">
+                        <input type="file" id="profileImage" class="form-control" accept="image/*">
+                    </div>
+                </div>
+
+                <!-- Email Field -->
+                <div class="mb-4">
+                    <input type="email" id="email" class="form-control form-control-lg" placeholder="abcemail@gmail.com" required>
+                </div>
+
+                <!-- Password Field -->
+                <div class="mb-4">
+                    <input type="password" id="password" class="form-control form-control-lg" placeholder="••••••••" required>
+                </div>
+
+                <!-- Options Row -->
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" role="switch" id="rememberMe">
+                        <label class="form-check-label small" for="rememberMe">Remember Password</label>
+                    </div>
+                    <a href="#" class="text-danger small fw-semibold text-decoration-none">Forget Password?</a>
+                </div>
+                
+                <!-- Admin Login Link -->
+                <div class="text-end mb-4">
+                    <a href="adminlogin.html" class="text-secondary small fw-semibold text-decoration-none">
+                        Admin Login
+                    </a>
+                </div>
+
+                <!-- Buttons -->
+                <div class="row g-3">
+                    <div class="col-sm-6">
+                        <button type="submit" id="mainAuthButton" class="btn btn-custom-primary btn-lg w-100">
+                            Login
+                        </button>
+                    </div>
+                    <div class="col-sm-6">
+                        <button type="button" id="toggleButton" class="btn btn-custom-secondary btn-lg w-100">
+                            Create Account
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Load Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:3000/api';
+        const authForm = document.getElementById('authForm');
+        const alertArea = document.getElementById('alert-area');
+        const profileImageSection = document.getElementById('profileImageSection');
+        const profileImageInput = document.getElementById('profileImage');
+        const imagePreview = document.getElementById('imagePreview');
+        const welcomeHeader = document.getElementById('welcome-header');
+        const mainAuthButton = document.getElementById('mainAuthButton');
+        const toggleButton = document.getElementById('toggleButton');
+        
+        let isRegistrationMode = false;
+
+        // Function to display alerts
+        const showAlert = (message, type) => {
+            alertArea.innerHTML = `
+                <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            `;
+        };
+
+        // --- Image Preview Logic ---
+        profileImageInput.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    imagePreview.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            } else {
+                imagePreview.src = 'https://placehold.co/80x80/cccccc/333333?text=P';
+            }
+        });
+
+        // --- Auth Mode Toggle Logic ---
+        toggleButton.addEventListener('click', () => {
+            isRegistrationMode = !isRegistrationMode;
+            
+            if (isRegistrationMode) {
+                // Switch to Registration Mode
+                profileImageSection.style.display = 'block';
+                welcomeHeader.textContent = 'Welcome! Please Register Your Account.';
+                mainAuthButton.textContent = 'Register';
+                toggleButton.textContent = 'Back to Login';
+                mainAuthButton.className = 'btn btn-custom-secondary btn-lg w-100';
+                toggleButton.className = 'btn btn-custom-primary btn-lg w-100';
+            } else {
+                // Switch back to Login Mode
+                profileImageSection.style.display = 'none';
+                welcomeHeader.textContent = 'Welcome Back. Please Log In To Your Account.';
+                mainAuthButton.textContent = 'Login';
+                toggleButton.textContent = 'Create Account';
+                mainAuthButton.className = 'btn btn-custom-primary btn-lg w-100';
+                toggleButton.className = 'btn btn-custom-secondary btn-lg w-100';
+                profileImageInput.value = ''; // Clear file input
+                imagePreview.src = 'https://placehold.co/80x80/cccccc/333333?text=P';
+            }
+        });
+
+        // --- Form Submission Logic ---
+        const handleAuth = async (event) => {
+            event.preventDefault();
+
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            // Endpoint is /signup or /login, matching the routes in server.js
+            const endpoint = isRegistrationMode ? '/signup' : '/login'; 
+
+            alertArea.innerHTML = '';
+            
+            try {
+                // Payload data setup
+                let bodyData;
+                let headers = { 'Content-Type': 'application/json' };
+
+                if (isRegistrationMode) {
+                    bodyData = JSON.stringify({ email, password, name: 'New User' });
+                } else {
+                    bodyData = JSON.stringify({ email, password });
+                }
+
+
+                const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+                    method: 'POST',
+                    headers: headers,
+                    body: bodyData
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    const successMessage = isRegistrationMode ? 'Registration successful! Please log in.' : 'Login successful! Redirecting...';
+                    showAlert(successMessage, 'success');
+                    console.log('Auth successful:', data);
+                    
+                    // Store token and user data for interface.html
+                    if (data.token) {
+                        localStorage.setItem('token', data.token); 
+                        localStorage.setItem('user', JSON.stringify({ name: data.name || 'User', email: data.email }));
+                    }
+                    
+                    if (isRegistrationMode) {
+                         // Switch back to login view after successful registration
+                        setTimeout(() => toggleButton.click(), 1500); 
+                    } else {
+                        // *** FINAL REDIRECTION TO DASHBOARD ***
+                        setTimeout(() => {
+                            window.location.href = 'interface.html';
+                        }, 500);
+                    }
+
+                } else {
+                    const defaultError = isRegistrationMode ? 'Registration failed.' : 'Invalid credentials.';
+                    const errorMessage = data.message || defaultError;
+                    showAlert(`${isRegistrationMode ? 'Registration' : 'Login'} failed: ${errorMessage}`, 'danger');
+                }
+
+            } catch (error) {
+                console.error('Network Error:', error);
+                showAlert('Could not connect to the backend server. Please check your network or ensure the server is running.', 'danger');
+            }
+        };
+
+        // Attach event listener to the form
+        authForm.addEventListener('submit', handleAuth);
+    </script>
+</body>
+</html>
