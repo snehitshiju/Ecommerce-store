@@ -13,9 +13,9 @@ import jwt from 'jsonwebtoken';
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 3000;
-const JWT_SECRET = process.env.JWT_SECRET || 'your_secret_key_here'; // Default secret if not set in .env
-const API_BASE_URL = '/api';
+const PORT = // enter your port number here
+const JWT_SECRET = //'your_secret_key_here'; // Default secret if not set in .env
+const API_BASE_URL = 
 
 // Middleware
 // NOTE: CORS is crucial for frontend/backend communication when running on different ports
@@ -25,7 +25,7 @@ app.use(express.json());
 // --- Database Connection ---
 const connectDB = async () => {
     try {
-        await mongoose.connect(process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/ecommercestore'); // Fallback URI
+        await mongoose.connect(//placehere); // Fallback URI
         console.log('MongoDB connected successfully.');
         await seedDummyData(); // Seed data immediately after connecting
     } catch (err) {
@@ -143,10 +143,10 @@ const seedDummyData = async () => {
         const adminCount = await User.countDocuments({ role: 'admin' });
         if (adminCount === 0) {
             await User.create({
-                email: 'admin@ecommercestore.com',
-                password: 'admim', // NOTE: Plaintext password for simple testing
-                name: 'Site Administrator',
-                role: 'admin'
+                email: 
+                password:  // NOTE: Plaintext password for simple testing
+                name: 
+                role: 
             });
             console.log('Default Admin user seeded successfully.');
         }
@@ -438,4 +438,5 @@ app.listen(PORT, () => {
 });
 
 // Connect to DB and start seeding/listening
+
 connectDB();
